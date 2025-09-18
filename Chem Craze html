@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chem Craze — Mini Game</title>
+<style>
+  :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;--bg:#0f172a;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:linear-gradient(180deg,#031124 0%,var(--bg) 100%);color:#e6eef6;padding:20px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,.6);width:360px;max-width:95%}
+  h1{font-size:20px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+  .meta{font-size:13px;color:var(--muted)}
+  .symbol{font-size:44px;font-weight:700;text-align:center;padding:18px 0}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button.opt{padding:10px;border-radius:8px;border:0;background:#071022;color:inherit;cursor:pointer;font-weight:600}
+  .info{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)}
+  .hidden{display:none}
+  .footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+  .big{font-size:16px;color:var(--accent);font-weight:700}
+  .btn-row{display:flex;gap:8px;justify-content:center;margin-top:12px}
+  button.action{background:var(--accent);border:0;color:#032;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+  <main class="card" id="game">
+    <h1>Chem Craze <span class="meta">Match the element</span></h1>
+
+    <div id="roundUI">
+      <div class="symbol" id="symbol">Fe</div>
+      <div class="opts" id="opts"></div>
+      <div class="info">
+        <div>Round: <span id="round">1</span>/5</div>
+        <div>Time: <span id="time">12</span>s</div>
+        <div>Score: <span id="score">0</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="action" id="skip">Skip</button>
+        <button class="action" id="restart">Restart</button>
+      </div>
+    </div>
+
+    <div id="endUI" class="hidden">
+      <div style="text-align:center">
+        <div class="big" id="finalScore">Score: 0</div>
+        <p class="footer">Nice try! Want to play again?</p>
+        <div class="btn-row"><button class="action" id="playAgain">Play Again</button></div>
+      </div>
+    </div>
+  </main>
+
+<script>
+(() => {
+  const elements = [
+    {sym:'H', name:'Hydrogen'},
+    {sym:'He', name:'Helium'},
+    {sym:'Li', name:'Lithium'},
+    {sym:'Be', name:'Beryllium'},
+    {sym:'B', name:'Boron'},
+    {sym:'C', name:'Carbon'},
+    {sym:'N', name:'Nitrogen'},
+    {sym:'O', name:'Oxygen'},
+    {sym:'F', name:'Fluorine'},
+    {sym:'Ne', name:'Neon'},
+    {sym:'Na', name:'Sodium'},
+    {sym:'Mg', name:'Magnesium'},
+    {sym:'Al', name:'Aluminium'},
+    {sym:'Si', name:'Silicon'},
+    {sym:'P', name:'Phosphorus'},
+    {sym:'S', name:'Sulfur'},
+    {sym:'Cl', name:'Chlorine'},
+    {sym:'Ar', name:'Argon'},
+    {sym:'K', name:'Potassium'},
+    {sym:'Ca', name:'Calcium'},
+    {sym:'Fe', name:'Iron'},
+    {sym:'Cu', name:'Copper'},
+    {sym:'Ag', name:'Silver'},
+    {sym:'Au', name:'Gold'}
+  ];
+
+  const ROUNDS = 5;
+  const TIME_PER_ROUND = 12;
+
+  let round = 0, score = 0, timer=0, countdown;
+
+  const el = id=>document.getElementById(id);
+  const symbolEl = el('symbol'), optsEl = el('opts');
+  const roundEl = el('round'), timeEl = el('time'), scoreEl = el('score');
+  const endUI = el('endUI'), roundUI = el('roundUI');
+  const finalScore = el('finalScore');
+
+  function pickRandom(arr, n){
+    const copy = arr.slice();
+    const out = [];
+    for(let i=0;i<n;i++){
+      const idx = Math.floor(Math.random()*copy.length);
+      out.push(copy.splice(idx,1)[0]);
+    }
+    return out;
+  }
+
+  function startRound(){
+    if(countdown) clearInterval(countdown);
+    if(round>=ROUNDS){
+      finish();
+      return;
+    }
+    round++;
+    roundEl.textContent = round;
+    const correct = elements[Math.floor(Math.random()*elements.length)];
+    const others = pickRandom(elements.filter(e=>e.sym!==correct.sym), 3);
+    const choices = pickRandom([correct,...others],4);
+    symbolEl.textContent = correct.sym;
+    optsEl.innerHTML = '';
+    choices.forEach(c=>{
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = c.name;
+      b.onclick = ()=>choose(c.name, correct.name);
+      optsEl.appendChild(b);
+    });
+
+    timer = TIME_PER_ROUND;
+    timeEl.textContent = timer;
+    countdown = setInterval(()=>{
+      timer--;
+      timeEl.textContent = timer;
+      if(timer<=0){ clearInterval(countdown); startRound(); } // auto-skip when time runs out
+    }, 1000);
+  }
+
+  function choose(chosen, correct){
+    if(chosen===correct){
+      score += Math.max(1, Math.ceil(timer/3)); // reward faster answers
+    } else {
+      score = Math.max(0, score-1);
+    }
+    scoreEl.textContent = score;
+    clearInterval(countdown);
+    // brief visual feedback (simple)
+    optsEl.querySelectorAll('button').forEach(b=>b.disabled=true);
+    setTimeout(startRound, 500);
+  }
+
+  function finish(){
+    clearInterval(countdown);
+    roundUI.classList.add('hidden');
+    endUI.classList.remove('hidden');
+    finalScore.textContent = 'Score: ' + score;
+  }
+
+  function reset(){
+    round = 0; score = 0;
+    roundEl.textContent = 0;
+    scoreEl.textContent = 0;
+    endUI.classList.add('hidden');
+    roundUI.classList.remove('hidden');
+    startRound();
+  }
+
+  // buttons
+  el('skip').addEventListener('click', ()=>{ clearInterval(countdown); startRound(); });
+  el('restart').addEventListener('click', reset);
+  el('playAgain').addEventListener('click', reset);
+
+  // start
+  reset();
+})();
+</script>
+</body>
+</html>
