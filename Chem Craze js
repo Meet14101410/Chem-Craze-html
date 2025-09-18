@@ -1,0 +1,18 @@
+/* chem-craze.js
+   External script for Chem Craze mini-game.
+   Save as chem-craze.js and include with: <script src="chem-craze.js" defer></script>
+*/
+(() => {
+  // ----- CONFIG -----
+  const ROUNDS = 5;
+  const TIME_PER_ROUND = 12; // seconds
+  const STORAGE_KEY = 'chemCraze:highScore';
+
+  // ----- ELEMENT DATA -----
+  const elements = [
+    { sym: 'H',  name: 'Hydrogen' },
+    { sym: 'He', name: 'Helium' },
+    { sym: 'Li', name: 'Lithium' },
+    { sym: 'Be', name: 'Beryllium' },
+    { sym: 'B',  name: 'Boron' },
+    { sym: 'C',  name:
